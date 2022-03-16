@@ -36,8 +36,24 @@ public class GameMain : MonoBehaviour
     public TextMeshProUGUI m_txtSayonara;
 
     public int[,] m_iScoreInning;
-
     public Image[] m_imgOutCount;
+
+    public Daseki m_daseki;
+    public RunnerManager m_runnerManager;
+
+    public void GameInitialize()
+    {
+        int[,] test = new int[3, 4];
+        m_iScoreInning = new int[(int)攻撃順.最大, 9];
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < (int)攻撃順.最大; j++)
+            {
+                m_iScoreInning[j, i] = -1;
+            }
+        }
+        ShowScoreBoard(m_iScoreInning);
+    }
 
     public void ShowOutCount(int _iOutCount)
     {
@@ -112,6 +128,24 @@ public class GameMain : MonoBehaviour
         return (senkoTotal < koukouTotal);
     }
 
+    // こっから下はテスト系の処理がほとんど ================
+
+    public void OnInningResult2()
+    {
+        GameInitialize();
+        StartCoroutine(InningOutCountBegin());
+    }
+
+    private IEnumerator InningOutCountBegin()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < (int)攻撃順.最大; j++)
+            {
+                yield return StartCoroutine(InningResult(i, (攻撃順)j));
+            }
+        }
+    }
     public IEnumerator InningResult(int _iInning, 攻撃順 _junban)
     {
         int iOutCount = 0;
@@ -154,32 +188,6 @@ public class GameMain : MonoBehaviour
             if (CheckSayonara(_iInning, _junban, m_iScoreInning))
             {
                 break;
-            }
-        }
-
-    }
-    public void OnInningResult2()
-    {
-        int[,] test = new int[3, 4];
-        m_iScoreInning = new int[(int)攻撃順.最大, 9];
-        for (int i = 0; i < 9; i++)
-        {
-            for (int j = 0; j < (int)攻撃順.最大; j++)
-            {
-                m_iScoreInning[j, i] = -1;
-            }
-        }
-
-        StartCoroutine(InningOutCountBegin());
-    }
-
-    private IEnumerator InningOutCountBegin()
-    {
-        for (int i = 0; i < 9; i++)
-        {
-            for (int j = 0; j < (int)攻撃順.最大; j++)
-            {
-                yield return StartCoroutine(InningResult(i, (攻撃順)j));
             }
         }
     }
@@ -240,10 +248,68 @@ public class GameMain : MonoBehaviour
         }
         m_txtScoreFirstTotal.text = iTotalFirst.ToString();
         m_txtScoreSecondTotal.text = iTotalSecond.ToString();
-
-
     }
 
+    // 打席の結果を反映する
+    public void TestDasekiGame()
+    {
+        GameInitialize();
+        StartCoroutine(DasekiKekkaResult());
+    }
+    private IEnumerator DasekiKekkaResult()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < (int)攻撃順.最大; j++)
+            {
+                yield return StartCoroutine(InningResultDaseki(i, (攻撃順)j));
+            }
+        }
+    }
+    private IEnumerator InningResultDaseki(int _iInning, 攻撃順 _junban)
+    {
+        int iOutCount = 0;
+        ShowOutCount(iOutCount);
+        m_runnerManager.Clear();
+
+        if (CheckSayonara(_iInning, _junban, m_iScoreInning))
+        {
+            m_iScoreInning[(int)_junban, _iInning] = -2;
+            ShowScoreBoard(m_iScoreInning);
+            yield return new WaitForSeconds(0.05f);
+            yield break;
+        }
+        m_iScoreInning[(int)_junban, _iInning] = 0;
+
+        for (iOutCount = 0; iOutCount < 3;)
+        {
+            ShowScoreBoard(m_iScoreInning);
+
+            DASEKI_RESULT dasekiResult = m_daseki.GetDasekiResult();
+
+            if (m_daseki.IsOut(dasekiResult))
+            {
+                iOutCount += 1;
+                ShowOutCount(iOutCount);
+            }
+            else
+            {
+                int iAdvance = m_daseki.GetAdvanceCount(dasekiResult);
+                m_runnerManager.AddBatter(iAdvance);
+
+                // ホームインしたランナーも消します
+                int iAddScore = m_runnerManager.GetScore();
+                m_iScoreInning[(int)_junban, _iInning] += iAddScore;
+            }
+            ShowScoreBoard(m_iScoreInning);
+            yield return new WaitForSeconds(0.1f);
+
+            if (CheckSayonara(_iInning, _junban, m_iScoreInning))
+            {
+                break;
+            }
+        }
+    }
 
 
 }
