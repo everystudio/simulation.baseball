@@ -11,6 +11,32 @@ public enum 攻撃順
     最大
 }
 
+public struct InningCount
+{
+    public int strike;
+    public int ball;
+    public int outcount;
+
+    public void Reset()
+    {
+        strike = 0;
+        ball = 0;
+        outcount = 0;
+    }
+    public void AddStrike(bool _isFaul)
+    {
+        strike += 1;
+        if (_isFaul)
+        {
+            strike = Mathf.Clamp(strike, 0, 2);
+        }
+    }
+    public void AddBall()
+    {
+        ball += 1;
+    }
+}
+
 public class GameMain : MonoBehaviour
 {
     public Text m_txtResult;
@@ -37,6 +63,7 @@ public class GameMain : MonoBehaviour
 
     public int[,] m_iScoreInning;
     public Image[] m_imgOutCount;
+    public InningCount m_inningCount;
 
     public Daseki m_daseki;
     public RunnerManager m_runnerManager;
@@ -310,6 +337,8 @@ public class GameMain : MonoBehaviour
             }
         }
     }
+
+    // １球ずつ行う
 
 
 }

@@ -20,6 +20,31 @@ public enum DASEKI_RESULT
     MAX
 }
 
+public enum PITCH_TYPE
+{
+    FASTBALL,
+    CURVE,
+    SLIDER,
+    SHOOT,
+    SINKER,
+    SCREWBALL,
+    FORK,
+    SPLITTER,
+    CHANGEUP,
+    CUTTER,
+    PALM,
+    KNUCKLE,
+    TWOSEAM,
+    MAX
+}
+
+public struct PitchingBall
+{
+    public float speed;
+    public Vector2 course;
+    public PITCH_TYPE pitchType;
+}
+
 public class Daseki : MonoBehaviour
 {
     public TextMeshProUGUI m_txtDasekiKekka;
@@ -77,6 +102,24 @@ public class Daseki : MonoBehaviour
     {
         DASEKI_RESULT daseki = GetDasekiResult();
         m_txtDasekiKekka.text = daseki.ToString();
+    }
+
+    public PitchingBall Pitching()
+    {
+        PitchingBall ret = new PitchingBall();
+
+        float fBias = 0.2f;
+        Vector2 cource = new Vector2(
+            Random.Range(0f - fBias, 3f + fBias),
+            Random.Range(0f - fBias, 3f + fBias)
+            );
+
+        int iPitchType = Random.Range(0, (int)PITCH_TYPE.MAX);
+
+        ret.course = cource;
+        ret.pitchType = (PITCH_TYPE)iPitchType;
+
+        return ret;
     }
 
 
