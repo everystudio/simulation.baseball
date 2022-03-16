@@ -35,6 +35,10 @@ public struct InningCount
     {
         ball += 1;
     }
+    public void AddOutCount()
+    {
+        outcount += 1;
+    }
 }
 
 public class GameMain : MonoBehaviour
@@ -62,6 +66,8 @@ public class GameMain : MonoBehaviour
     public TextMeshProUGUI m_txtSayonara;
 
     public int[,] m_iScoreInning;
+    public Image[] m_imgStrikeCount;
+    public Image[] m_imgBallCount;
     public Image[] m_imgOutCount;
     public InningCount m_inningCount;
 
@@ -80,6 +86,23 @@ public class GameMain : MonoBehaviour
             }
         }
         ShowScoreBoard(m_iScoreInning);
+
+        m_inningCount.Reset();
+        ShowInningCount(m_inningCount);
+
+    }
+
+    public void ShowInningCount(int _iCount, Image[] _imageArr, Color _color)
+    {
+        for (int i = 0; i < _imageArr.Length; i++)
+        {
+            Color color = Color.white;
+            if (i < _iCount)
+            {
+                color = _color;
+            }
+            _imageArr[i].color = color;
+        }
     }
 
     public void ShowOutCount(int _iOutCount)
@@ -129,6 +152,13 @@ public class GameMain : MonoBehaviour
         }
         m_txtScoreFirstTotal.text = senkoTotal.ToString();
         m_txtScoreSecondTotal.text = koukouTotal.ToString();
+    }
+
+    public void ShowInningCount(InningCount _inningCount)
+    {
+        ShowInningCount(_inningCount.ball, m_imgBallCount, Color.green);
+        ShowInningCount(_inningCount.strike, m_imgStrikeCount, Color.yellow);
+        ShowInningCount(_inningCount.outcount, m_imgOutCount, Color.red);
     }
 
     public bool CheckSayonara(int _iInning, 攻撃順 _junban, int[,] _score)
@@ -312,7 +342,7 @@ public class GameMain : MonoBehaviour
         {
             ShowScoreBoard(m_iScoreInning);
 
-            DASEKI_RESULT dasekiResult = m_daseki.GetDasekiResult();
+            SWING_RESULT dasekiResult = m_daseki.GetDasekiResult();
 
             if (m_daseki.IsOut(dasekiResult))
             {
@@ -338,7 +368,117 @@ public class GameMain : MonoBehaviour
         }
     }
 
-    // １球ずつ行う
+    // １球ずつ行う ---------------------------------------------------
+    public void TestOneBall()
+    {
+        GameInitialize();
+        StartCoroutine(OneBallResult());
+    }
 
+    private IEnumerator OneBallResult()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < (int)攻撃順.最大; j++)
+            {
+                yield return StartCoroutine(InningResultOneBall(i, (攻撃順)j));
+            }
+        }
+        yield return 0;
+    }
+    private IEnumerator InningResultOneBall(int _iInning, 攻撃順 _junban)
+    {
+        m_inningCount.Reset();
+        ShowInningCount(m_inningCount);
+        m_runnerManager.Clear();
+
+        if (CheckSayonara(_iInning, _junban, m_iScoreInning))
+        {
+            m_iScoreInning[(int)_junban, _iInning] = -2;
+            ShowScoreBoard(m_iScoreInning);
+            yield return new WaitForSeconds(0.05f);
+            yield break;
+        }
+        m_iScoreInning[(int)_junban, _iInning] = 0;
+
+        for (; m_inningCount.outcount < 3;)
+        {
+            ShowScoreBoard(m_iScoreInning);
+
+            SWING_RESULT swingResult = SWING_RESULT.MAX;
+            bool bContinueDaseki = true;
+
+            do
+            {
+                PitchingBall pitchingBall = m_daseki.Pitching();
+                swingResult = m_daseki.GetDasekiResult(pitchingBall, m_inningCount);
+
+                switch (swingResult)
+                {
+                    case SWING_RESULT.SEEOFF:
+                        if (pitchingBall.IsStrikeAreaBall())
+                        {
+                            m_inningCount.AddStrike(false);
+                        }
+                        else
+                        {
+                            m_inningCount.AddBall();
+                        }
+                        break;
+                    case SWING_RESULT.SWING_OUT:
+                        m_inningCount.AddStrike(false);
+                        break;
+
+                    case SWING_RESULT.SINGLE:
+                    case SWING_RESULT.TWOBASE:
+                    case SWING_RESULT.THREEBASE:
+                    case SWING_RESULT.HOMERUN:
+                        bContinueDaseki = false;
+                        break;
+
+                    case SWING_RESULT.BONDA:
+                    default:
+                        m_inningCount.AddOutCount();
+                        bContinueDaseki = false;
+                        break;
+                }
+
+                if (bContinueDaseki)
+                {
+                    if (3 <= m_inningCount.strike)
+                    {
+                        m_inningCount.AddOutCount();
+                        bContinueDaseki = false;
+                    }
+                    else if (4 <= m_inningCount.ball)
+                    {
+                        bContinueDaseki = false;
+                    }
+                }
+                ShowInningCount(m_inningCount);
+                yield return new WaitForSeconds(0.1f);
+            }
+            while (bContinueDaseki);
+
+            int iAdvance = m_daseki.GetAdvanceCount(swingResult);
+            if (4 <= m_inningCount.ball)
+            {
+                iAdvance = 1;
+            }
+            m_runnerManager.AddBatter(iAdvance);
+
+            // ホームインしたランナーも消します
+            int iAddScore = m_runnerManager.GetScore();
+            m_iScoreInning[(int)_junban, _iInning] += iAddScore;
+
+            ShowScoreBoard(m_iScoreInning);
+            yield return new WaitForSeconds(0.1f);
+
+            if (CheckSayonara(_iInning, _junban, m_iScoreInning))
+            {
+                break;
+            }
+        }
+    }
 
 }
