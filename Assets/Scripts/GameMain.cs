@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using anogamelib;
 
 public enum 攻撃順
 {
@@ -73,6 +74,10 @@ public class GameMain : MonoBehaviour
 
     public Daseki m_daseki;
     public RunnerManager m_runnerManager;
+
+    public EventInt m_eventTotalScoreSenkou;
+    public EventInt m_eventTotalScoreKoukou;
+
 
     public void GameInitialize()
     {
@@ -150,8 +155,11 @@ public class GameMain : MonoBehaviour
                 }
             }
         }
-        m_txtScoreFirstTotal.text = senkoTotal.ToString();
-        m_txtScoreSecondTotal.text = koukouTotal.ToString();
+        m_eventTotalScoreSenkou.Invoke(senkoTotal);
+        m_eventTotalScoreKoukou.Invoke(koukouTotal);
+
+        //m_txtScoreFirstTotal.text = senkoTotal.ToString();
+        //m_txtScoreSecondTotal.text = koukouTotal.ToString();
     }
 
     public void ShowInningCount(InningCount _inningCount)
@@ -303,8 +311,8 @@ public class GameMain : MonoBehaviour
         {
             iTotalSecond += score;
         }
-        m_txtScoreFirstTotal.text = iTotalFirst.ToString();
-        m_txtScoreSecondTotal.text = iTotalSecond.ToString();
+        //m_txtScoreFirstTotal.text = iTotalFirst.ToString();
+        //m_txtScoreSecondTotal.text = iTotalSecond.ToString();
     }
 
     // 打席の結果を反映する

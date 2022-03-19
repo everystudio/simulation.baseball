@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class RunnerManager : MonoBehaviour
 {
     public GameObject[] m_goRunners;
+    public ShowBaseCondition m_showBaseCondition;
     public List<int> RunnerPosition = new List<int>();
 
     public void Clear()
@@ -20,11 +21,15 @@ public class RunnerManager : MonoBehaviour
         {
             m_goRunners[i].SetActive(RunnerPosition.Contains(i));
         }
+        m_showBaseCondition.Show(RunnerPosition);
     }
 
     public void AddBatter(int _iAdd)
     {
-        RunnerPosition.Add(0);
+        if (0 < _iAdd)
+        {
+            RunnerPosition.Add(0);
+        }
         Advance(_iAdd);
         ShowRunner();
     }
