@@ -94,7 +94,6 @@ public class GameMain : MonoBehaviour
 
         m_inningCount.Reset();
         ShowInningCount(m_inningCount);
-
     }
 
     public void ShowInningCount(int _iCount, Image[] _imageArr, Color _color)
